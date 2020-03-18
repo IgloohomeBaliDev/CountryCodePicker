@@ -21,6 +21,8 @@ class CountryCodePicker extends StatefulWidget {
   final Function(CountryCode) builder;
   final bool enabled;
   final TextOverflow textOverflow;
+  final bool isErrorStyle;
+  final String hint;
 
   /// shows the name of the country instead of the dialcode
   final bool showOnlyCountryWhenClosed;
@@ -70,6 +72,8 @@ class CountryCodePicker extends StatefulWidget {
     this.enabled = true,
     this.textOverflow = TextOverflow.ellipsis,
     this.comparator,
+    this.isErrorStyle: false,
+    this.hint: "",
   });
 
   @override
@@ -107,43 +111,78 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
         child: widget.builder(selectedItem.localize(context)),
       );
     else {
-      _widget = FlatButton(
-        padding: widget.padding,
-        onPressed: widget.enabled ? _showSelectionDialog : null,
-        child: Flex(
-          direction: Axis.horizontal,
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (widget.showFlag || (widget.showFlagMain == true))
-              Flexible(
-                flex: widget.alignLeft ? 0 : 1,
-                fit: widget.alignLeft ? FlexFit.tight : FlexFit.loose,
-                child: Padding(
-                  padding: widget.alignLeft
-                      ? const EdgeInsets.only(right: 16.0, left: 8.0)
-                      : const EdgeInsets.only(right: 16.0),
-                  child: Image.asset(
-                    selectedItem.flagUri,
-                    package: 'country_code_picker',
-                    width: widget.flagWidth,
-                  ),
-                ),
-              ),
+      _widget = Flex(
+        direction: Axis.horizontal,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (widget.showFlag || (widget.showFlagMain == true))
             Flexible(
-              fit: widget.alignLeft ? FlexFit.tight : FlexFit.loose,
-              child: Text(
-                widget.showOnlyCountryWhenClosed
-                    ? selectedItem.toCountryStringOnly(context)
-                    : selectedItem.toString(),
-                style: widget.textStyle ?? Theme.of(context).textTheme.button,
-                overflow: widget.textOverflow,
+              child: Padding(
+                padding: widget.alignLeft
+                    ? const EdgeInsets.only(right: 16.0, left: 8.0)
+                    : const EdgeInsets.only(right: 16.0),
+                child: (selectedItem?.name != null)
+                    ? Text(
+                        selectedItem.name +
+                            "  " +
+                            "(${widget.showOnlyCountryWhenClosed ? selectedItem.toCountryStringOnly(context) : selectedItem.toString()})",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.normal,
+                          fontSize: 15,
+                        ),
+                      )
+                    : Text(
+                        widget.hint,
+                        style: TextStyle(
+                          color: Colors.grey,
+                          fontWeight: FontWeight.normal,
+                          fontSize: 15,
+                        ),
+                      ),
               ),
             ),
-          ],
-        ),
+        ],
       );
     }
-    return _widget;
+    return Container(
+      padding: widget.padding,
+      decoration: ShapeDecoration(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          side:
+              BorderSide(color: widget.isErrorStyle ? Colors.red : Colors.grey),
+          borderRadius: BorderRadius.all(
+            Radius.circular(30),
+          ),
+        ),
+      ),
+      child: Container(
+        padding: EdgeInsets.fromLTRB(0, 10, 5, 10),
+        child: InkWell(
+          onTap: widget.enabled ? _showSelectionDialog : null,
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: Stack(
+                  alignment: Alignment.centerRight,
+                  children: <Widget>[
+                    Align(
+                      child: _widget,
+                      alignment: Alignment.centerLeft,
+                    ),
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      color: Colors.teal,
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -151,33 +190,10 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
     super.didUpdateWidget(oldWidget);
 
     _onInit(selectedItem);
-
-    if (oldWidget.initialSelection != widget.initialSelection) {
-      if (widget.initialSelection != null) {
-        selectedItem = elements.firstWhere(
-            (e) =>
-                (e.code.toUpperCase() ==
-                    widget.initialSelection.toUpperCase()) ||
-                (e.dialCode == widget.initialSelection.toString()),
-            orElse: () => elements[0]);
-      } else {
-        selectedItem = elements[0];
-      }
-    }
   }
 
   @override
   initState() {
-    if (widget.initialSelection != null) {
-      selectedItem = elements.firstWhere(
-          (e) =>
-              (e.code.toUpperCase() == widget.initialSelection.toUpperCase()) ||
-              (e.dialCode == widget.initialSelection.toString()),
-          orElse: () => elements[0]);
-    } else {
-      selectedItem = elements[0];
-    }
-
     favoriteElements = elements
         .where((e) =>
             widget.favorite.firstWhere(
