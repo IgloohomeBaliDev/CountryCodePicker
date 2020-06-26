@@ -190,10 +190,29 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
     super.didUpdateWidget(oldWidget);
 
     _onInit(selectedItem);
+
+    if (oldWidget.initialSelection != widget.initialSelection) {
+      if (widget.initialSelection != null) {
+        selectedItem = elements.firstWhere(
+            (e) =>
+                (e.code.toUpperCase() ==
+                    widget.initialSelection.toUpperCase()) ||
+                (e.dialCode == widget.initialSelection.toString()),
+            orElse: () => elements[0]);
+      }
+    }
   }
 
   @override
   initState() {
+    if (widget.initialSelection != null) {
+      selectedItem = elements.firstWhere(
+          (e) =>
+              (e.code.toUpperCase() == widget.initialSelection.toUpperCase()) ||
+              (e.dialCode == widget.initialSelection.toString()),
+          orElse: () => elements[0]);
+    }
+
     favoriteElements = elements
         .where((e) =>
             widget.favorite.firstWhere(
